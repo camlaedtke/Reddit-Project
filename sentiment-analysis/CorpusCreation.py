@@ -16,34 +16,45 @@ class CorpusCreator():
 
     def __init__(self, directory):
         self.directory = directory
+        self.file_list = []
         print("initialized")
 
+    def get_original_indices(self):
+        return self.indices
+
+    def get_headlines(self):
+        return self.text_corpus
+
     def load_corpus(self, file_name):
+        self.file_list = self.file_list.append(file_name)
         file_path = self.directory + file_name
-        self.raw_corpus = pd.read_csv(filepath_or_buffer=file_path, sep=",",
-                                      names=["title", "author", "created_utc", "score",
-                                             "link_flair_text", "domain","self_text", "id"])
+        if len(self.file_list) == 0:
+            self.raw_corpus = pd.read_csv(filepath_or_buffer=file_path, sep=",",
+                                          names=["title", "author", "created_utc", "score",
+                                          "link_flair_text", "domain","self_text", "id"])
+        else:
+            df = pd.read_csv(filepath_or_buffer=file_path, sep=",",
+                             names=["title", "author", "created_utc", "score",
+                                    "link_flair_text", "domain", "self_text", "id"])
+            self.raw_corpus = pd.concat([self.raw_corpus, df])
+        print("Data loaded")
 
-    def add_corpus(self, file_name):
-        file_path = self.directory + file_name
-        df = pd.read_csv(filepath_or_buffer=file_path, sep=",",
-                                      names=["title", "author", "created_utc", "score",
-                                             "link_flair_text", "domain", "self_text", "id"])
-        #self.raw_corpus.append(df, ignore_index=True)
-        self.raw_corpus = pd.concat([self.raw_corpus, df])
-        print(len(self.raw_corpus))
+    def chop_corpus(self, num_rows):
+        self.raw_corpus = self.raw_corpus.sample(n=num_rows)
+        self.indices = self.raw_corpus.index
+        self.raw_corpus = self.raw_corpus.reset_index(drop=True)
 
-    def cleanData(self):
+    def clean_data(self):
         '''Create new column called TITLE_lower of titles but in lowercase, delete rows with blank titles'''
+        self.raw_corpus = self.raw_corpus.reset_index(drop=True)
         self.raw_corpus = self.raw_corpus.loc[:, ["id", "author", "score", "title"]]
         self.text_corpus = self.raw_corpus.loc[:, "title"].str.lower()
         print('Data cleaned')
 
-    def tfidfVectorize(self):
+    def tfidf_vectorize(self, max_features):
         '''Tfidf vectorizer has lots of useful functions'''
-        vectorizer = TfidfVectorizer(stop_words='english', max_features=1000)
+        vectorizer = TfidfVectorizer(stop_words='english', max_features=max_features)
         self.vectorized = vectorizer.fit_transform(self.text_corpus)
-        print(self.vectorized.shape)
         self.vectorized = self.vectorized.todense()
         print(self.vectorized.shape)
         print('Data vectorized')
@@ -55,7 +66,7 @@ class CorpusCreator():
         self.normalized = scaler.fit(self.vectorized).transform(self.vectorized)
         print("Data normalized")
 
-    def numpyNormalize(self):
+    def numpy_normalize(self):
         '''By using numpy's implementation of std, memory consumption can be reduced by half'''
         std = self.X.std()
         mean = self.X.mean()
@@ -65,15 +76,14 @@ class CorpusCreator():
         self.X_normalized = scaler.fit_transform(self.X)
         print("Data normalized with numpy")
 
-    def reduceDimensionsPCA(self, components, svd_solver):
+    def reduce_dimensions_PCA(self, components, svd_solver):
         '''Dimensionality reduction using principle component analysis (PCA), produces lower dimensional array'''
         pca = PCA(n_components=components, svd_solver=svd_solver)
         self.X_reduced = pca.fit_transform(self.normalized)
 
-        print('Components: '+str(pca.n_components_))
-        print('Dimensions reduced')
+        print('Dimensions reduced to: '+str(pca.n_components_))
 
-    def reduceDimensionsUMAP(self):
+    def reduce_dimensions_UMAP(self):
         print("hello")
 
     def clear_file(self, file_name):
@@ -92,21 +102,3 @@ class CorpusCreator():
     def get_array(self):
         return self.normalized
 
-# corp = BagOfWords(directory="/Users/cameronlaedtke/PycharmProjects/MLPractice/RedditNLP/data/")
-# #corp.clear_file("BagOfWords/headlines_array.csv")
-# corp.load_corpus("the_donald/headlines.csv")
-# #corp.add_corpus("The_Mueller/headlines.csv")
-# #corp.add_corpus("politics/headlines.csv")
-# corp.cleanData()
-# corp.tfidfVectorize()
-# corp.normalize()
-
-#corp.create_file("headlines_array.csv")
-
-# arrayObj = arrayCreation(size=50000)
-# arrayObj.cleanData()
-# arrayObj.tfidfVectorize()
-# arrayObj.normalize()
-# arrayObj.numpyNormalize()
-# arrayObj.reduceDimensionsPCA(components=0.8, svd_solver='full')
-# arrayObj.createFile(name='word_occurances_50k0.8C.csv')

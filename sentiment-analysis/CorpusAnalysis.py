@@ -17,7 +17,7 @@ from sklearn.metrics import silhouette_score
 from sklearn.metrics import calinski_harabaz_score
 import warnings
 warnings.filterwarnings("ignore", message=": RuntimeWarning: numpy.dtype size changed")
-from .CorpusCreation import CorpusCreator
+from CorpusCreation import *
 
 
 class CorpusAnalyser:
@@ -29,7 +29,7 @@ class CorpusAnalyser:
         fileObject = open(file_path, 'rb')
         self.X = pickle.load(fileObject)
 
-    def load_array(self, array):
+    def load_data(self, array):
         self.X = array
 
     def load_headlines(self, file):
@@ -38,8 +38,7 @@ class CorpusAnalyser:
                                       names=["title", "author", "created_utc", "score",
                                              "link_flair_text", "domain", "self_text", "id"])
         self.headlines = self.raw_corpus.loc[:,"title"]
-        print(self.headlines.head())
-
+        print("Titles loaded")
 
     def headlines_to_file(self, to_file):
         to_file = self.directory + to_file
@@ -47,36 +46,34 @@ class CorpusAnalyser:
 
     def get_sample(self, size):
         self.X = self.X.sample(n=size)
+        print("Reduced to sample of:"+size)
 
-    def reduce_dimensions_pca(self, components, svd_solver):
+    def reduce_dimensions_pca(self, components):
         '''Dimensionality reduction using principle component analysis (PCA), produces lower dimensional array'''
         self.num_components = components
-        pca = PCA(n_components=components, svd_solver=svd_solver)
+        if components <= 1:
+            pca = PCA(n_components=components, svd_solver="full")
+        else:
+            pca = PCA(n_components=components)
+
         self.X = pca.fit_transform(self.X)
         print(self.X.shape)
-
-        print('Components: '+str(pca.n_components_))
-        print('Dimensions reduced')
+        print('Dimensions reduced to: '+str(pca.n_components_))
 
     def k_means(self, clusters):
         '''K-means'''
         self.algorithm = "kmeans"
-
         kmeans = KMeans(n_clusters=clusters)
+
         self.X_dist_matrix = kmeans.fit_transform(self.X)
         self.labels = kmeans.labels_
 
-        print(self.labels.shape)
-        print(self.X.shape)
-
         labels = ["X", "Y"]
+
         self.num_clusters = clusters
         self.df = pd.DataFrame(data=self.X, columns=labels)
         self.labels_df = pd.DataFrame(data=self.labels)
-
         self.df['labels'] = self.labels_df
-
-
 
         #self.X_labeled = np.append(self.X, self.labels, axis=1)
         print("Kmeans complete")
@@ -116,7 +113,8 @@ class CorpusAnalyser:
         self.labels = gm.predict(self.X)
         unique, counts = np.unique(self.labels, return_counts=True)
         mydict = dict(zip(unique, counts))
-        #print(mydict)
+
+        labels = ["X", "Y"]
 
         plt.bar(list(mydict.keys()), mydict.values(), color='g')
         plt.title("Gaussian Mixture")
@@ -197,12 +195,61 @@ class CorpusAnalyser:
         plt.gcf().text(0.3, 0.03, "Clusters: " + str(self.num_clusters))
         plt.show()
 
-    def get_silhouette_score(self):
+    def hover_plot(self, titles):
+        cmap = self.get_cmap(n=self.num_clusters)
+
+        self.df["titles"] = titles
+
+        fig, ax = plt.subplots()
+
+        sc = plt.scatter(x=self.df.loc[:, "X"], y=self.df.loc[:, "Y"], s=0.5 ** 2, c=cmap(self.df.loc[:, "labels"]))
+
+        annot = ax.annotate("", xy=(0, 0), xytext=(-200, 10), textcoords="offset points",
+                            bbox=dict(boxstyle="round", fc="w"),
+                            arrowprops=dict(arrowstyle="->"))
+
+        annot.set_visible(False)
+
+        def update_annot(ind):
+            pos = sc.get_offsets()[ind["ind"][0]]
+            annot.xy = pos
+            text = "{}".format(" ".join([self.df.loc[n, "titles"] for n in ind["ind"]]))
+            annot.set_text(text)
+            annot.set_wrap(True)
+            #annot.get_bbox_patch().set_facecolor(cmap(norm(c[ind["ind"][0]])))
+            annot.get_bbox_patch().set_alpha(0.4)
+
+        def hover(event):
+            vis = annot.get_visible()
+            if event.inaxes == ax:
+                cont, ind = sc.contains(event)
+                if cont:
+                    update_annot(ind)
+                    annot.set_visible(True)
+                    fig.canvas.draw_idle()
+                else:
+                    if vis:
+                        annot.set_visible(False)
+                        fig.canvas.draw_idle()
+
+        fig.canvas.mpl_connect("motion_notify_event", hover)
+
+        plt.title("TSNE Embedding")
+        plt.xlabel("Dimension 1")
+        plt.ylabel("Dimension 2")
+
+        plt.gcf().text(0.05, 0.03, "Perplexity: " + str(self.perplexity))
+        plt.gcf().text(0.3, 0.03, "Clusters: " + str(self.num_clusters))
+
+        plt.show()
+
+    def record_silhouette_score(self):
         '''Testing with silhouette score. Cluster distance matrix based on centroid locations is needed.
          Doesn't work with DBSCAN, GaussianMixture'''
         self.silhouetteScore = silhouette_score(self.X_dist_matrix, self.labels)
         self.record_score(algorithm=self.algorithm, clusters=self.num_clusters, perplexity=self.perplexity,
                           score=self.silhouetteScore)
+
         print('Silhouette score: '+str(self.silhouetteScore))
 
     def get_calinski_harabaz_score(self):
@@ -220,52 +267,3 @@ class CorpusAnalyser:
     def clear_files(self, d_file):
         with open(self.directory + d_file, "w+") as file:
             file.close()
-
-
-corp = BagOfWords(directory="/Users/cameronlaedtke/PycharmProjects/MLPractice/RedditNLP/data/")
-# corp.clear_file("BagOfWords/headlines_array.csv")
-corp.load_corpus("the_donald/comments.csv")
-# corp.add_corpus("The_Mueller/headlines.csv")
-# corp.add_corpus("politics/headlines.csv")
-corp.cleanData()
-corp.tfidfVectorize()
-corp.normalize()
-#corp.create_file("comments_array.csv")
-comments = corp.get_array()
-
-# Research UMAP and HDBSCAN
-# Also try t-SNE for dimensionality reduction
-
-X = WordsAnalysis(directory="/Users/cameronlaedtke/PycharmProjects/MLPractice/RedditNLP/data/")
-# X.load_array(array_file="headlines_array.csv")
-
-X.load_array(comments)
-
-
-# X.load_headlines(file="politics/headlines.csv")
-# X.headlines_to_file(to_file="BagOfWords/headlines_text.csv")
-
-# X.clear_files(d_file="BagOfWords/headlines_text.csv")
-
-
-X.reduce_dimensions_pca(components=0.4, svd_solver="full")
-X.t_sne(perplexity=46)
-# X.db_scan(eps=0.5, min_samples=20)
-X.k_means(clusters=25)
-X.get_silhouette_score()
-# X.get_calinski_harabaz_score()
-X.plot()
-
-# cluster.KMeans(clusters=21)
-# cluster.DB_SCAN(eps=0.3, min_samples=30)
-# cluster.GaussianMixture(n_components=40)
-# cluster.BayesianGaussianMixture(n_components=40,
-#                                 weight_concentration_prior_type='dirichlet_process',
-#                                 weight_concentration_prior=1000,
-#                                 mean_precision_prior=1,
-#                                 n_init=3,
-#                                 max_iter=100,
-#                                 init_params='kmeans')
-# cluster.TSNE(perplexity=50)
-# cluster.getCalinskiHarabazScore()
-# cluster.getSilhouetteScore()
