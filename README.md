@@ -2,8 +2,7 @@
 
 A project written in R and Python to mine a Reddit corpus and analyse Reddit sentiment.
 A lot of the code is taken from https://github.com/pranau97/reddit-opinion-mining and 
-https://github.com/minimaxir/reddit-graph. I also have a folder example-walkthrough that has the code from the 
-tutorial https://www.learndatasci.com/tutorials/predicting-reddit-news-sentiment-naive-bayes-text-classifiers/
+https://github.com/minimaxir/reddit-graph. 
 
 ## Requirements
 
