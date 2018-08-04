@@ -17,7 +17,7 @@ from sklearn.metrics import silhouette_score
 from sklearn.metrics import calinski_harabaz_score
 import warnings
 warnings.filterwarnings("ignore", message=": RuntimeWarning: numpy.dtype size changed")
-from CorpusCreation import *
+from .CorpusCreation import *
 
 
 class CorpusAnalyser:

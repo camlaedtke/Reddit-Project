@@ -18,7 +18,7 @@ sent.run_topical_analysis("Kushner")
 sent.stacked_bar(group="topics")
 sent.clear_files()
 
-class Assembler():
+class Assembler:
 
     def __init__(self, directory):
         self.directory = directory

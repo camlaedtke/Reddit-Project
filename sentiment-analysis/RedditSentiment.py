@@ -11,8 +11,6 @@ from nltk.corpus import stopwords
 from nltk.tokenize import RegexpTokenizer
 from fuzzywuzzy import fuzz
 
-#
-# TODO: Make it so you can keep inputting subreddits and it will grouped bar chart them
 # TODO: Group comments and posts by user. Rank users by karma, polarity score. Most frequent users. Are they divisive?
 # TODO: Things to try: put corpus into bag of words, try out different tools like n-grams, cosine similarity, t-SNE etc
 
