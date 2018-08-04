@@ -17,8 +17,7 @@ from fuzzywuzzy import fuzz
 # TODO: Things to try: put corpus into bag of words, try out different tools like n-grams, cosine similarity, t-SNE etc
 
 
-
-class SentimentAnalysis:
+class SentimentAnalyser:
 
     def __init__(self, directory, subreddit):
         data_fp = directory+subreddit
@@ -402,12 +401,4 @@ class SentimentAnalysis:
 
 
 
-sent = SentimentAnalysis(directory="/Users/cameronlaedtke/PycharmProjects/MLPractice/RedditNLP/data/",
-                          subreddit="The_Mueller")
-
-# sent.run_sentiment_analysis()
-# sent.word_distribution('politics/negative_list.txt')
-# sent.run_topical_analysis("Kushner")
-# sent.stacked_bar(group="topics")
-# sent.clear_files()
 

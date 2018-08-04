@@ -12,7 +12,7 @@ import warnings
 warnings.filterwarnings("ignore", message=": RuntimeWarning: numpy.dtype size changed")
 #warnings.filterwarnings("always")
 
-class BagOfWords():
+class CorpusCreator():
 
     def __init__(self, directory):
         self.directory = directory

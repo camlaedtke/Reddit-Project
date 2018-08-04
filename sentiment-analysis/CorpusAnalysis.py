@@ -17,10 +17,10 @@ from sklearn.metrics import silhouette_score
 from sklearn.metrics import calinski_harabaz_score
 import warnings
 warnings.filterwarnings("ignore", message=": RuntimeWarning: numpy.dtype size changed")
-from BagOfWords import BagOfWords
+from .CorpusCreation import CorpusCreator
 
 
-class WordsAnalysis:
+class CorpusAnalyser:
     def __init__(self, directory):
         self.directory = directory
 

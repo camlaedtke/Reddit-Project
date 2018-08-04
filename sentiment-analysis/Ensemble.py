@@ -1,5 +1,22 @@
-from BagOfWords import BagOfWords
-from BOWAnalysis import WordsAnalysis
+from .CorpusCreation import CorpusCreator
+from .CorpusAnalysis import CorpusAnalyser
+from .RedditScraper import ScrapeReddit
+from .RedditSentiment import SentimentAnalyser
+
+sub = ScrapeReddit(directory="/Users/cameronlaedtke/PycharmProjects/MLPractice/RedditNLP/data/")
+
+sub.set_subreddit("funny")
+sub.get_posts()
+sub.get_comments()
+
+sent = SentimentAnalyser(directory="/Users/cameronlaedtke/PycharmProjects/MLPractice/RedditNLP/data/",
+                          subreddit="The_Mueller")
+
+sent.run_sentiment_analysis()
+sent.word_distribution('politics/negative_list.txt')
+sent.run_topical_analysis("Kushner")
+sent.stacked_bar(group="topics")
+sent.clear_files()
 
 
 def load(file_name):
@@ -38,7 +55,7 @@ def show():
     model.hover_plot(headlines)
 
 
-corpus = BagOfWords(directory="/Users/cameronlaedtke/PycharmProjects/MLPractice/Sentiment-Analysis/"
+corpus = CorpusCreator(directory="/Users/cameronlaedtke/PycharmProjects/MLPractice/Sentiment-Analysis/"
                             "Reddit-Sentiment-Analysis/data/")
 model = WordsAnalysis(directory="/Users/cameronlaedtke/PycharmProjects/MLPractice/RedditNLP/data/")
 

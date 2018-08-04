@@ -6,7 +6,7 @@ import csv
 import praw
 
 
-class DataScraper:
+class ScrapeReddit:
 
     def __init__(self, directory):
         self.directory = directory
@@ -38,7 +38,7 @@ class DataScraper:
                 writer.writerow(data)
                 time.sleep(1)
 
-    def get_comments(self, fromRow):
+    def get_comments(self):
         '''Gets the top 100 comments of each top 1000 post of subreddit'''
         print("Fetching comments")
         with open(self.headlines_file, "r", encoding="utf-8") as infile:
@@ -50,39 +50,38 @@ class DataScraper:
                 post_id = str(row[7])
                 row_counter+=1
 
-                if row_counter > fromRow:
-                    if post_id == "6am00f":
-                        resume_flag = 1
-                    # was originally if not resume_flag
-                    if resume_flag:
+                if post_id == "6am00f":
+                    resume_flag = 1
+                # was originally if not resume_flag
+                if resume_flag:
+                    continue
+
+                submission = self.reddit.submission(id=post_id)
+                submission.comments.replace_more(limit=30, threshold=10)
+
+                comment_count = 0
+
+                for comment in submission.comments.list():
+                    if comment_count >= 100:
+                        break
+
+                    if isinstance(comment, praw.models.MoreComments):
+                        comment_count += 1
                         continue
 
-                    submission = self.reddit.submission(id=post_id)
-                    submission.comments.replace_more(limit=30, threshold=10)
+                    comment_str = comment.body
 
-                    comment_count = 0
+                    comment_count += 1
 
-                    for comment in submission.comments.list():
-                        if comment_count >= 100:
-                            break
+                    if comment_str == "[deleted]" or comment_str == "[removed]":
+                        continue
 
-                        if isinstance(comment, praw.models.MoreComments):
-                            comment_count += 1
-                            continue
+                    with open(self.comments_file, "a",  encoding="utf-8") as outfile:
+                        writer = csv.writer(outfile)
+                        writer.writerow(["%r" % comment_str, post_id])
 
-                        comment_str = comment.body
-
-                        comment_count += 1
-
-                        if comment_str == "[deleted]" or comment_str == "[removed]":
-                            continue
-
-                        with open(self.comments_file, "a",  encoding="utf-8") as outfile:
-                            writer = csv.writer(outfile)
-                            writer.writerow(["%r" % comment_str, post_id])
-
-                print("Finished post:", post_id, "Row count: ", row_counter)
-                time.sleep(2)
+            print("Finished post:", post_id, "Row count: ", row_counter)
+            time.sleep(2)
 
     def clear_files(self):
 
@@ -93,11 +92,7 @@ class DataScraper:
             file.close()
 
 
-data = DataScraper(directory="/Users/cameronlaedtke/PycharmProjects/MLPractice/RedditNLP/data/")
 
-data.set_subreddit("funny")
-data.get_posts()
-# data.get_comments()
 
 
 
