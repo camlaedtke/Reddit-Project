@@ -4,6 +4,7 @@ Script to scrape the top posts and comments data from a subreddit
 import time
 import csv
 import praw
+from collections import defaultdict
 
 
 class ScrapeReddit:
@@ -18,6 +19,7 @@ class ScrapeReddit:
         self.subreddit = subreddit
         self.headlines_file = self.directory + "/" + subreddit + "/headlines.csv"
         self.comments_file = self.directory + "/" + subreddit + "/comments.csv"
+        self.users_file = self.directory + "/" + subreddit + "/users.csv"
 
     def get_posts(self):
         '''Fetches the top 1000 posts from the past year from a specified subreddit.'''
@@ -82,6 +84,60 @@ class ScrapeReddit:
 
             print("Finished post:", post_id, "Row count: ", row_counter)
             time.sleep(2)
+
+    def get_users(self):
+        print("loading users")
+        '''Groups the scraped comments by user'''
+        print("Fetching comments")
+        with open(self.headlines_file, "r", encoding="utf-8") as infile:
+            reader = csv.reader(infile)
+            resume_flag = 0
+            row_counter = 0
+
+
+            user_dict = defaultdict(list)
+
+            for row in reader:
+                post_id = str(row[7])
+                row_counter += 1
+
+                if post_id == "6am00f":
+                    resume_flag = 1
+                # was originally if not resume_flag
+                if resume_flag:
+                    continue
+
+                submission = self.reddit.submission(id=post_id)
+                submission.comments.replace_more(limit=30, threshold=10)
+
+                comment_count = 0
+
+                for comment in submission.comments.list():
+                    if comment_count >= 100:
+                        break
+
+                    if isinstance(comment, praw.models.MoreComments):
+                        comment_count += 1
+                        continue
+
+                    comment_str = comment.body
+                    comment_author = comment.author
+
+                    comment_count += 1
+
+                    if comment_str == "[deleted]" or comment_str == "[removed]":
+                        continue
+
+                    if comment_author in user_dict:
+                        user_dict[comment_author].append(comment_str)
+
+            print("Finished post:", post_id, "Row count: ", row_counter)
+            time.sleep(2)
+
+        with open(self.users_file, "a", encoding="utf-8") as outfile:
+            writer = csv.writer(outfile)
+            writer.writerow(["%r" % post_id])
+
 
     def clear_files(self):
 
