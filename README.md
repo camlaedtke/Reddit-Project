@@ -1,8 +1,6 @@
 # Reddit Opinion Mining, Classification, and Sentiment Analysis
 
 A project written in R and Python to mine a Reddit corpus and analyse Reddit sentiment.
-Inspiration from https://github.com/pranau97/reddit-opinion-mining and 
-https://github.com/minimaxir/reddit-graph. 
 
 ## Requirements
 
@@ -51,5 +49,7 @@ Associate each Reddit user with it's own corpus and then apply various clusterin
 are any intrinsic clusters of Reddit users that can be looked at through sentiment analysis.
 
 
+Inspiration from https://github.com/pranau97/reddit-opinion-mining and 
+https://github.com/minimaxir/reddit-graph. 
 
 
